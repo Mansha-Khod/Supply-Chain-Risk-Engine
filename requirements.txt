@@ -8,3 +8,6 @@ xgboost
 shap
 joblib
 plotly
+python-multipart
+fastapi
+uvicorn[standard]
