@@ -17,12 +17,12 @@ app.add_middleware(
 app.include_router(overview.router,prefix="/api/overview",tags=['overview'])
 app.include_router(predict.router,prefix="/api/predict",tags=['predict'])
 app.include_router(explainability.router,prefix='/api/explainability',tags=['explainability'])
-app.include_router(segments.router,prefix="/api.segments",tags=['segments'])
+app.include_router(segments.router,prefix="/api/segments",tags=['segments'])
 
 app.mount('/assets',StaticFiles(directory="reports/figures"),name='assets')
-app.mount("/static",StaticFiles(directory="app.static"),name='static')
+app.mount("/static",StaticFiles(directory="app/static"),name='static')
 
 @app.get("/",include_in_schema=False)
 def serve_frontent():
-    return FileResponse("apps/static/index.html")
+    return FileResponse("app/static/index.html")
 

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Supply Chain Risk Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#11151b;
+    --panel:#181e26;
+    --panel-2:#1d2530;
+    --border:#2a323d;
+    --text:#e7eaee;
+    --muted:#8b95a3;
+    --amber:#e8a33d;
+    --amber-dim:#7a5a26;
+    --red:#e4572e;
+    --green:#4fa87b;
+    --font-display:'Barlow Condensed', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    min-height:100vh;
+    background-image:
+      linear-gradient(var(--bg), var(--bg)),
+      repeating-linear-gradient(135deg, rgba(232,163,61,0.025) 0px, rgba(232,163,61,0.025) 1px, transparent 1px, transparent 14px);
+  }
+  a{color:inherit;}
+
+  /* ── Layout shell ────────────────────────────── */
+  .shell{
+    display:grid;
+    grid-template-columns:240px 1fr;
+    min-height:100vh;
+  }
+  .rail{
+    background:var(--panel);
+    border-right:1px solid var(--border);
+    padding:28px 0;
+    display:flex;
+    flex-direction:column;
+  }
+  .rail-brand{
+    padding:0 24px 24px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:8px;
+  }
+  .rail-brand .tag{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.14em;
+    color:var(--amber);
+    text-transform:uppercase;
+  }
+  .rail-brand h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:0.01em;
+    line-height:1.1;
+    margin-top:6px;
+  }
+  .nav{margin-top:12px; display:flex; flex-direction:column;}
+  .nav-item{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    letter-spacing:0.04em;
+    color:var(--muted);
+    padding:13px 24px;
+    border-left:2px solid transparent;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition:all .15s ease;
+    text-transform:uppercase;
+  }
+  .nav-item .idx{color:var(--amber-dim); font-weight:700;}
+  .nav-item:hover{color:var(--text); background:rgba(255,255,255,0.02);}
+  .nav-item.active{
+    color:var(--amber);
+    border-left-color:var(--amber);
+    background:rgba(232,163,61,0.06);
+  }
+  .nav-item.active .idx{color:var(--amber);}
+  .rail-footer{
+    margin-top:auto;
+    padding:16px 24px 0;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--muted);
+    border-top:1px solid var(--border);
+    padding-top:16px;
+  }
+
+  main{padding:40px 48px; max-width:1180px;}
+  .page{display:none;}
+  .page.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  .page-head{margin-bottom:32px;}
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--amber);
+  }
+  h2.title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:38px;
+    margin-top:6px;
+  }
+  .lede{color:var(--muted); max-width:640px; margin-top:10px; font-size:15px; line-height:1.55;}
+
+  /* ── Cards & grid ─────────────────────────────── */
+  .grid3{display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin:24px 0;}
+  .grid4{display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin:24px 0;}
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:20px;
+  }
+  .metric-label{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .metric-value{
+    font-family:var(--font-display);
+    font-size:32px;
+    font-weight:600;
+    margin-top:6px;
+  }
+  .metric-sub{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--amber);
+    margin-top:4px;
+  }
+
+  hr.div{border:none; border-top:1px solid var(--border); margin:32px 0;}
+
+  /* ── Pipeline ──────────────────────────────────*/
+  .pipeline{display:flex; flex-direction:column; gap:0; margin-top:20px;}
+  .stage{display:flex; gap:18px; align-items:flex-start; position:relative; padding-bottom:28px;}
+  .stage:last-child{padding-bottom:0;}
+  .stage::before{
+    content:'';
+    position:absolute;
+    left:17px; top:36px; bottom:0;
+    width:1px;
+    background:var(--border);
+  }
+  .stage:last-child::before{display:none;}
+  .stage-num{
+    width:36px; height:36px; flex:none;
+    border:1px solid var(--amber-dim);
+    background:var(--panel-2);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono);
+    font-size:13px; color:var(--amber);
+    z-index:1;
+  }
+  .stage-body h4{font-family:var(--font-display); font-size:19px; font-weight:600;}
+  .stage-body p{color:var(--muted); font-size:13.5px; margin-top:2px;}
+
+  ul.insights{list-style:none; margin-top:14px;}
+  ul.insights li{
+    font-size:14px; color:var(--text);
+    padding:10px 0 10px 20px;
+    border-bottom:1px solid var(--border);
+    position:relative;
+  }
+  ul.insights li:last-child{border-bottom:none;}
+  ul.insights li::before{
+    content:'▸'; position:absolute; left:0; color:var(--amber);
+  }
+
+  /* ── Upload / predict ─────────────────────────── */
+  .dropzone{
+    border:1px dashed var(--border);
+    border-radius:6px;
+    background:var(--panel);
+    padding:36px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .dropzone:hover, .dropzone.dragover{border-color:var(--amber); background:rgba(232,163,61,0.04);}
+  .dropzone input{display:none;}
+  .dropzone .dz-title{font-family:var(--font-display); font-size:20px; font-weight:600;}
+  .dropzone .dz-sub{color:var(--muted); font-size:13px; margin-top:6px; font-family:var(--font-mono);}
+
+  .btn{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    background:var(--amber);
+    color:#1a1206;
+    border:none;
+    padding:11px 20px;
+    border-radius:4px;
+    cursor:pointer;
+    font-weight:700;
+    transition:filter .15s ease;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+  .btn.ghost{
+    background:transparent;
+    color:var(--text);
+    border:1px solid var(--border);
+  }
+  .btn.ghost:hover{border-color:var(--amber); color:var(--amber);}
+
+  .required-cols{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:14px;
+    line-height:1.7;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:14px;
+    max-height:140px;
+    overflow-y:auto;
+  }
+  .required-cols .col-chip{
+    display:inline-block;
+    background:var(--bg);
+    border:1px solid var(--border);
+    padding:2px 8px;
+    border-radius:3px;
+    margin:2px;
+  }
+
+  table{width:100%; border-collapse:collapse; font-size:13px; margin-top:8px;}
+  thead th{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    text-align:left;
+    padding:10px 12px;
+    border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:9px 12px;
+    border-bottom:1px solid var(--border);
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    white-space:nowrap;
+  }
+  tbody tr:hover{background:rgba(255,255,255,0.02);}
+  .table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:6px;}
+
+  /* signature element: customs-stamp risk badge */
+  .stamp{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:var(--font-mono);
+    font-weight:700;
+    font-size:11px;
+    letter-spacing:0.06em;
+    padding:3px 9px;
+    border-radius:3px;
+    border:1.5px solid currentColor;
+    text-transform:uppercase;
+    transform:rotate(-1.5deg);
+  }
+  .stamp.high{color:var(--red);}
+  .stamp.medium{color:var(--amber);}
+  .stamp.low{color:var(--green);}
+
+  .error-box{
+    border:1px solid var(--red);
+    background:rgba(228,87,46,0.08);
+    color:#f0a48f;
+    padding:14px 16px;
+    border-radius:6px;
+    font-size:13.5px;
+    margin-top:16px;
+  }
+  .empty-state{
+    color:var(--muted);
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    padding:24px;
+    text-align:center;
+    border:1px dashed var(--border);
+    border-radius:6px;
+  }
+
+  .tabs{display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:20px;}
+  .tab{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    color:var(--muted);
+    padding:11px 16px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    margin-bottom:-1px;
+  }
+  .tab.active{color:var(--amber); border-bottom-color:var(--amber);}
+
+  .figure{width:100%; border:1px solid var(--border); border-radius:6px; background:var(--panel-2); display:block;}
+  .interp{margin-top:16px;}
+  .interp h5{font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:8px;}
+
+  .spinner{
+    width:16px; height:16px;
+    border:2px solid var(--border);
+    border-top-color:var(--amber);
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+    display:inline-block;
+    vertical-align:middle;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  @media (max-width: 860px){
+    .shell{grid-template-columns:1fr;}
+    .rail{flex-direction:row; overflow-x:auto; padding:16px;}
+    .rail-brand{display:none;}
+    .nav{flex-direction:row;}
+    .rail-footer{display:none;}
+    main{padding:24px;}
+    .grid3, .grid4{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <nav class="rail">
+    <div class="rail-brand">
+      <div class="tag">Freight Ops · ML Console</div>
+      <h1>Supply Chain<br>Risk Engine</h1>
+    </div>
+    <div class="nav">
+      <div class="nav-item active" data-page="overview"><span class="idx">01</span> Overview</div>
+      <div class="nav-item" data-page="predict"><span class="idx">02</span> Predict Risk</div>
+      <div class="nav-item" data-page="explain"><span class="idx">03</span> Explainability</div>
+      <div class="nav-item" data-page="segments"><span class="idx">04</span> Customer Segments</div>
+    </div>
+    <div class="rail-footer">
+      XGBoost · Random Forest · K-Means<br>FastAPI backend
+    </div>
+  </nav>
+
+  <main>
+    <!-- ══════════ PAGE 1: OVERVIEW ══════════ -->
+    <section class="page active" id="page-overview">
+      <div class="page-head">
+        <div class="eyebrow">Manifest 01 / Overview</div>
+        <h2 class="title">Supply Chain Risk Engine</h2>
+        <p class="lede" id="ov-desc">Loading…</p>
+      </div>
+
+      <div class="grid3" id="ov-metrics"></div>
+
+      <hr class="div">
+      <h3 style="font-family:var(--font-display); font-size:22px; font-weight:600;">Prediction Pipeline</h3>
+      <div class="pipeline" id="ov-pipeline"></div>
+
+      <hr class="div">
+      <h3 style="font-family:var(--font-display); font-size:22px; font-weight:600;">Business Insights</h3>
+      <ul class="insights" id="ov-insights"></ul>
+    </section>
+
+    <!-- ══════════ PAGE 2: PREDICT ══════════ -->
+    <section class="page" id="page-predict">
+      <div class="page-head">
+        <div class="eyebrow">Manifest 02 / Scoring</div>
+        <h2 class="title">Shipment Delay Risk Prediction</h2>
+        <p class="lede">Upload a CSV of shipment records. Each row is scored by the XGBoost classifier and stamped with a risk tier.</p>
+      </div>
+
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept=".csv" />
+        <div class="dz-title">Drop shipment CSV here, or click to browse</div>
+        <div class="dz-sub" id="dz-filename">No file selected</div>
+      </div>
+
+      <div id="required-cols-wrap" style="margin-top:16px;"></div>
+
+      <div style="margin-top:20px; display:flex; gap:12px;">
+        <button class="btn" id="predictBtn" disabled>Run Prediction</button>
+        <button class="btn ghost" id="downloadBtn" disabled>Download Full Results (CSV)</button>
+      </div>
+
+      <div id="predict-error"></div>
+      <div id="predict-results"></div>
+    </section>
+
+    <!-- ══════════ PAGE 3: EXPLAINABILITY ══════════ -->
+    <section class="page" id="page-explain">
+      <div class="page-head">
+        <div class="eyebrow">Manifest 03 / Explainability</div>
+        <h2 class="title">SHAP Feature Explainability</h2>
+        <p class="lede">SHAP values explain why the model makes a prediction — not only which features matter, but how each value shifts the outcome.</p>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="summary">Summary Plot</div>
+        <div class="tab" data-tab="waterfall">Waterfall Plot</div>
+      </div>
+
+      <div id="explain-summary" class="tab-panel"></div>
+      <div id="explain-waterfall" class="tab-panel" style="display:none;"></div>
+    </section>
+
+    <!-- ══════════ PAGE 4: SEGMENTS ══════════ -->
+    <section class="page" id="page-segments">
+      <div class="page-head">
+        <div class="eyebrow">Manifest 04 / Segmentation</div>
+        <h2 class="title">Customer Risk Segments</h2>
+        <p class="lede">Customers are grouped into risk tiers based on order history, delay behavior, and purchasing patterns.</p>
+      </div>
+      <div id="segments-content">Loading…</div>
+    </section>
+  </main>
+</div>
+
+<script>
+const API = '';
+
+// ── Navigation ───────────────────────────────
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('page-' + item.dataset.page).classList.add('active');
+  });
+});
+
+// ── Overview ─────────────────────────────────
+async function loadOverview(){
+  const res = await fetch(`${API}/api/overview`);
+  const data = await res.json();
+
+  document.getElementById('ov-desc').textContent = data.description;
+
+  const metricsEl = document.getElementById('ov-metrics');
+  metricsEl.innerHTML = Object.values(data.metrics).map(m => `
+    <div class="card">
+      <div class="metric-label">${m.model}</div>
+      <div class="metric-value">${m.score}</div>
+      <div class="metric-sub">${m.metric}</div>
+    </div>
+  `).join('');
+
+  const pipelineEl = document.getElementById('ov-pipeline');
+  pipelineEl.innerHTML = data.pipeline.map((s, i) => `
+    <div class="stage">
+      <div class="stage-num">${i}</div>
+      <div class="stage-body">
+        <h4>${s.stage}</h4>
+        <p>${s.description}</p>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('ov-insights').innerHTML = data.insights.map(i => `<li>${i}</li>`).join('');
+}
+
+// ── Predict ──────────────────────────────────
+let selectedFile = null;
+
+async function loadRequiredColumns(){
+  try{
+    const res = await fetch(`${API}/api/predict/features`);
+    const data = await res.json();
+    const wrap = document.getElementById('required-cols-wrap');
+    wrap.innerHTML = `
+      <div class="metric-label" style="margin-bottom:6px;">Required Columns (${data.required_columns.length})</div>
+      <div class="required-cols">${data.required_columns.map(c => `<span class="col-chip">${c}</span>`).join('')}</div>
+    `;
+  }catch(e){ /* silent — non-critical */ }
+}
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const predictBtn = document.getElementById('predictBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  if(e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if(e.target.files.length) setFile(e.target.files[0]); });
+
+function setFile(file){
+  selectedFile = file;
+  document.getElementById('dz-filename').textContent = file.name;
+  predictBtn.disabled = false;
+  downloadBtn.disabled = false;
+  document.getElementById('predict-error').innerHTML = '';
+  document.getElementById('predict-results').innerHTML = '';
+}
+
+function riskStamp(label){
+  const cls = label === 'High Risk' ? 'high' : label === 'Medium Risk' ? 'medium' : 'low';
+  return `<span class="stamp ${cls}">${label}</span>`;
+}
+
+predictBtn.addEventListener('click', async () => {
+  if(!selectedFile) return;
+  predictBtn.disabled = true;
+  predictBtn.innerHTML = '<span class="spinner"></span> Scoring…';
+  document.getElementById('predict-error').innerHTML = '';
+  document.getElementById('predict-results').innerHTML = '';
+
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+
+  try{
+    const res = await fetch(`${API}/api/predict`, { method: 'POST', body: formData });
+    const data = await res.json();
+    if(!res.ok){
+      const msg = data.detail?.message
+        ? `${data.detail.message}: ${data.detail.missing_columns.join(', ')}`
+        : (data.detail || 'Prediction failed.');
+      document.getElementById('predict-error').innerHTML = `<div class="error-box">${msg}</div>`;
+      return;
+    }
+    renderPredictResults(data);
+  }catch(e){
+    document.getElementById('predict-error').innerHTML = `<div class="error-box">Request failed: ${e.message}</div>`;
+  }finally{
+    predictBtn.disabled = false;
+    predictBtn.textContent = 'Run Prediction';
+  }
+});
+
+downloadBtn.addEventListener('click', async () => {
+  if(!selectedFile) return;
+  downloadBtn.disabled = true;
+  downloadBtn.innerHTML = '<span class="spinner"></span> Preparing…';
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+  try{
+    const res = await fetch(`${API}/api/predict/download`, { method: 'POST', body: formData });
+    if(!res.ok){
+      const data = await res.json();
+      document.getElementById('predict-error').innerHTML = `<div class="error-box">${data.detail?.message || data.detail || 'Download failed.'}</div>`;
+      return;
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'shipment_predictions.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    window.URL.revokeObjectURL(url);
+  }catch(e){
+    document.getElementById('predict-error').innerHTML = `<div class="error-box">Request failed: ${e.message}</div>`;
+  }finally{
+    downloadBtn.disabled = false;
+    downloadBtn.textContent = 'Download Full Results (CSV)';
+  }
+});
+
+function renderPredictResults(data){
+  const cols = data.preview.length ? Object.keys(data.preview[0]) : [];
+  const rows = data.preview.map(r => `
+    <tr>${cols.map(c => c === 'Risk Label' ? `<td>${riskStamp(r[c])}</td>` : `<td>${r[c]}</td>`).join('')}</tr>
+  `).join('');
+
+  document.getElementById('predict-results').innerHTML = `
+    <hr class="div">
+    <div class="grid4">
+      <div class="card"><div class="metric-label">Total Shipments</div><div class="metric-value">${data.total_shipments}</div></div>
+      <div class="card"><div class="metric-label">High Risk</div><div class="metric-value" style="color:var(--red)">${data.high_risk_count}</div></div>
+      <div class="card"><div class="metric-label">Medium Risk</div><div class="metric-value" style="color:var(--amber)">${data.medium_risk_count}</div></div>
+      <div class="card"><div class="metric-label">Average Risk</div><div class="metric-value">${data.average_risk_percent}%</div></div>
+    </div>
+    <div class="metric-label" style="margin:20px 0 8px;">Preview — first ${data.row_count_in_preview} of ${data.total_shipments} rows</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ── Explainability ───────────────────────────
+async function loadExplainability(){
+  const res = await fetch(`${API}/api/explainability`);
+  const data = await res.json();
+
+  const render = (key, d) => {
+    const el = document.getElementById(`explain-${key}`);
+    el.innerHTML = `
+      <h3 style="font-family:var(--font-display); font-size:22px; font-weight:600;">${d.title}</h3>
+      <p class="lede">${d.description}</p>
+      ${d.available
+        ? `<img class="figure" style="margin-top:16px;" src="${d.image_url}" alt="${d.title}">`
+        : `<div class="empty-state" style="margin-top:16px;">Run the relevant notebook to generate this plot.</div>`}
+      <div class="interp">
+        <h5>How to interpret</h5>
+        <ul class="insights">${d.interpretation.map(i => `<li>${i}</li>`).join('')}</ul>
+      </div>
+    `;
+  };
+  render('summary', data.summary);
+  render('waterfall', data.waterfall);
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+    document.getElementById(`explain-${tab.dataset.tab}`).style.display = 'block';
+  });
+});
+
+// ── Segments ─────────────────────────────────
+async function loadSegments(){
+  const el = document.getElementById('segments-content');
+  try{
+    const res = await fetch(`${API}/api/segments`);
+    const data = await res.json();
+    if(!res.ok){
+      el.innerHTML = `<div class="empty-state">${data.detail || 'Segments not available yet.'}</div>`;
+      return;
+    }
+
+    const tierEntries = Object.entries(data.tier_counts);
+    const metrics = tierEntries.map(([tier, count]) => `
+      <div class="card"><div class="metric-label">${tier}</div><div class="metric-value">${count}</div></div>
+    `).join('');
+
+    const profileCols = data.profile.length ? Object.keys(data.profile[0]) : [];
+    const profileRows = data.profile.map(r => `<tr>${profileCols.map(c => `<td>${r[c]}</td>`).join('')}</tr>`).join('');
+
+    el.innerHTML = `
+      <div class="grid4">${metrics}</div>
+      <hr class="div">
+      <div class="grid3" style="grid-template-columns:1fr 1fr;">
+        ${data.distribution_image_url ? `
+          <div>
+            <div class="metric-label" style="margin-bottom:8px;">Segment Distribution</div>
+            <img class="figure" src="${data.distribution_image_url}" alt="Segment distribution">
+          </div>` : ''}
+        ${data.pca_image_url ? `
+          <div>
+            <div class="metric-label" style="margin-bottom:8px;">Customer Visualization (PCA)</div>
+            <img class="figure" src="${data.pca_image_url}" alt="PCA cluster visualization">
+          </div>` : ''}
+      </div>
+      <hr class="div">
+      <div class="metric-label" style="margin-bottom:8px;">Risk Profiles</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>${profileCols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+          <tbody>${profileRows}</tbody>
+        </table>
+      </div>
+    `;
+  }catch(e){
+    el.innerHTML = `<div class="error-box">Failed to load segments: ${e.message}</div>`;
+  }
+}
+
+// ── Init ─────────────────────────────────────
+loadOverview();
+loadRequiredColumns();
+loadExplainability();
+loadSegments();
+</script>
+
+</body>
+</html>

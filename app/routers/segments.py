@@ -18,7 +18,7 @@ def get_segments():
             Customers=("Order Customer Id",'count'),
             Avg_Late_Rate=("late_rate","mean"),
             Avg_Delay_Gap=("avg_delay_gap",'mean'),
-            Avg_Order_Value=("abg_order_value",'mean'),
+            Avg_Order_Value=("avg_order_value",'mean'),
             Avg_Total_Orders=("total_orders",'mean'),
         ).round(3)
      .reset_index()
