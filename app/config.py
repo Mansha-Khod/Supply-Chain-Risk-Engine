@@ -7,8 +7,8 @@ DATASET_DIR=BASE_DIR/'dataset'
 PROCESSED_DIR=DATASET_DIR/'processed'
 FIGURES_DIR=BASE_DIR/'reports'/'figures'
 
-XGB_MODEL=MODELS_DIR/'xgb_classifier.pkl'
-RF_MODEL=MODELS_DIR/'rf_regressor.pkl'
+XGB_MODEL_PATH=MODELS_DIR/'xgb_classifier.pkl'
+RF_MODEL_PATH=MODELS_DIR/'rf_regressor.pkl'
 SCALER_PATH=MODELS_DIR/'scaler.pkl'
 SHAP_EXPLAINER_PATH=MODELS_DIR/'shap_explainer.pkl'
 
