@@ -7,11 +7,15 @@ from app.model_loader import get_models
 
 router=APIRouter()
 
-def _read_csv(file_bytes:bytes) ->pd.DataFrame:
-    try:
-        return pd.read_csv(io.BytesIO(file_bytes))
-    except Exception as e:
-        raise HTTPException(status_code=400,detail=f"Could Not parse CSV : {e}") from e
+def _read_csv(file_bytes: bytes) -> pd.DataFrame:
+    for encoding in ("utf-8", "latin-1"):
+        try:
+            return pd.read_csv(io.BytesIO(file_bytes), encoding=encoding)
+        except UnicodeDecodeError:
+            continue
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"Could not parse CSV: {exc}") from exc
+    raise HTTPException(status_code=400, detail="Could not parse CSV: unsupported encoding.")
 
 def _score(data:pd.DataFrame)-> pd.DataFrame:
      models=get_models()
