@@ -63,7 +63,7 @@ async def predict_risk(file:UploadFile=File(...)):
         'high_risk_count':int((results['Risk Label']=='High Risk').sum()),
         'medium_risk_count':int((results['Risk Label']=='Medium Risk').sum()),
         'low_risk_count':int((results['Risk Label']=='Low Risk').sum()),
-        'average_risk_percent':round(float(results['Risk Probabilities'].mean()),1),
+        'average_risk_percent':round(float(results['Risk Probability'].mean()),1),
         "preview":results.head(50).to_dict(orient='records'),
 
     }
