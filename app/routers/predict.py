@@ -61,8 +61,8 @@ async def predict_risk(file:UploadFile=File(...)):
     return{
         "total_shipments":len(results),
         'high_risk_count':int((results['Risk Label']=='High Risk').sum()),
-        'medium_risk_count':int((results['RiskLabel']=='Medium Risk').sum()),
-        'low_risk_count':int((results['RiskLabel']=='Low Risk').sum()),
+        'medium_risk_count':int((results['Risk Label']=='Medium Risk').sum()),
+        'low_risk_count':int((results['Risk Label']=='Low Risk').sum()),
         'average_risk_percent':round(float(results['Risk Probabilities'].mean()),1),
         "preview":results.head(50).to_dict(orient='records'),
 
