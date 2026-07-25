@@ -33,7 +33,7 @@ def _score(data:pd.DataFrame)-> pd.DataFrame:
 
      result=data.copy()
      result['Delay Risk']=predictions
-     result['Risk Probability']=probabilities
+     result['Risk Probability']=(probabilities.astype(float) * 100).round(1)
      result['Risk Label']=result['Risk Probability'].apply(
          lambda x:"High Risk" if x>70 else ("Medium Risk" if x>40 else "Low Risk")
 
@@ -70,7 +70,7 @@ async def predict_risk(file:UploadFile=File(...)):
 
 @router.post("/download")
 async def predict_and_download(file:UploadFile=File(...)):
-    if file.filename.lower().endswith('csv'):
+    if not file.filename.lower().endswith('csv'):
         raise HTTPException(status_code=400,detail="Please Upload a .csv file")
 
     contents=await file.read()
