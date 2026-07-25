@@ -1,10 +1,28 @@
 # Supply Chain Risk Engine
 
->> Built a multi-stage machine learning pipeline that predicts shipment delays, estimates delay severity, explains model decisions with SHAP, and segments customers into risk tiers using 180,000+ real-world supply chain records.
+>> Built a multi-stage machine learning pipeline that predicts shipment delays, estimates delay severity, explains model decisions with SHAP, and segments customers into risk tiers using 180,000+ real-world supply chain records. Served through a FastAPI backend with a REST API and a lightweight interactive frontend.
 
 ### Live Demo
 
-**Application:** https://supply-chain-risk-engine.streamlit.app/
+**Application:** https://supply-chain-risk-engine.onrender.com
+
+**API Docs (Swagger UI):** https://supply-chain-risk-engine.onrender.com/docs
+
+> Note: hosted on Render's free tier — the first request after a period of inactivity may take 30–60 seconds while the instance spins up. The full 180,000-row dataset runs efficiently locally; the hosted demo is best tested with a smaller sample CSV for responsiveness.
+
+---
+
+## Demo
+
+<video src="https://github.com/user-attachments/assets/c28015d2-1080-43b0-b068-5c0ca2f08c7a" width="100%" controls autoplay loop muted playsinline></video>
+
+![Overview Page](assets/overview_screenshot.png)
+
+![Predict Risk Page](assets/predict_screenshot.png)
+
+![SHAP Explainability](assets/explainability_screenshot.png)
+
+![Customer Segments](assets/segments_screenshot.png)
 
 ---
 
@@ -18,7 +36,7 @@ Most logistics systems react after a delay occurs. This project focuses on ident
 
 ## Solution Overview
 
-The project combines classification, regression, clustering, and explainable AI into a single workflow.
+The project combines classification, regression, clustering, and explainable AI into a single workflow, served through a REST API rather than a monolithic script-rerun UI.
 
 ```text
 New Shipment Order
@@ -43,6 +61,9 @@ K-Means Clustering
         │
         ▼
 SHAP Explainability
+        │
+        ▼
+FastAPI REST API + Frontend
 ```
 
 ---
@@ -89,7 +110,16 @@ This helps users understand not only what the model predicts, but why it makes e
 supply-chain-risk-engine/
 │
 ├── app/
-│   └── streamlit_app.py
+│   ├── main.py                # FastAPI app entrypoint
+│   ├── config.py               # centralized path configuration
+│   ├── model_loader.py         # cached model loading
+│   ├── routers/
+│   │   ├── overview.py         # GET /api/overview
+│   │   ├── predict.py          # POST /api/predict, /api/predict/download
+│   │   ├── explainability.py   # GET /api/explainability
+│   │   └── segments.py         # GET /api/segments
+│   └── static/
+│       └── index.html          # frontend (vanilla JS, single page)
 │
 ├── notebooks/
 │   ├── 01_eda.ipynb
@@ -113,6 +143,13 @@ supply-chain-risk-engine/
 ├── dataset/
 │   └── processed/
 │
+├── assets/
+│   ├── overview_screenshot.png
+│   ├── predict_screenshot.png
+│   ├── explainability_screenshot.png
+│   ├── segments_screenshot.png
+│   └── supply chain demo.mp4
+│
 ├── requirements.txt
 └── README.md
 ```
@@ -127,7 +164,9 @@ supply-chain-risk-engine/
 * Scikit-Learn
 * XGBoost
 * SHAP
-* Streamlit
+* FastAPI
+* Uvicorn
+* JavaScript (vanilla, no framework)
 * Matplotlib
 
 ---
@@ -135,14 +174,29 @@ supply-chain-risk-engine/
 ## Installation
 
 ```bash
-git clone https://github.com/Mansha-Khod/supply-chain-risk-engine.git
+git clone https://github.com/Mansha-Khod/Supply-Chain-Risk-Engine.git
 
-cd supply-chain-risk-engine
+cd Supply-Chain-Risk-Engine
 
 pip install -r requirements.txt
 
-streamlit run app/streamlit_app.py
+uvicorn app.main:app --reload
 ```
+
+Then open `http://127.0.0.1:8000/` in your browser. Interactive API documentation is available at `http://127.0.0.1:8000/docs`.
+
+---
+
+## API Endpoints
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/overview` | Project summary, model metrics, pipeline stages |
+| GET | `/api/predict/features` | Required CSV columns for prediction |
+| POST | `/api/predict` | Upload CSV → JSON risk predictions |
+| POST | `/api/predict/download` | Upload CSV → full results as downloadable CSV |
+| GET | `/api/explainability` | SHAP plot metadata |
+| GET | `/api/segments` | Customer risk tier counts and profiles |
 
 ---
 
@@ -189,8 +243,3 @@ Customer segmentation identifies groups with distinct delivery patterns, allowin
 * More efficient allocation of operational resources
 * Faster identification of systemic logistics issues
 * Increased trust in machine learning recommendations through explainability
-
-
-```
-```
-
