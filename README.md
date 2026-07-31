@@ -73,10 +73,10 @@ FastAPI REST API + Frontend
 | Task                      | Model         | Metric   | Score             |
 | ------------------------- | ------------- | -------- | ----------------- |
 | Delay Classification      | XGBoost       | AUC-ROC  | 0.93              |
-| Delay Classification      | XGBoost       | F1 Score | *Add Final Value* |
-| Delay Severity Prediction | Random Forest | MAE      | 0.47 Days         |
-| Delay Severity Prediction | Random Forest | R² Score | 0.456             |
-| Customer Segmentation     | K-Means       | Clusters | 4                 |
+| Delay Classification      | XGBoost       | F1 Score | 0.84              |
+| Delay Severity Prediction | Random Forest | MAE      | 0.48 Days         |
+| Delay Severity Prediction | Random Forest | R² Score | 0.42              |
+| Customer Segmentation     | K-Means       | Clusters | 4                 |                |
 
 ---
 

@@ -14,7 +14,7 @@ def get_overview():
         ),
         "metrics": {
             "classification": {"model": "XGBoost", "metric": "AUC-ROC", "score": "0.93"},
-            "regression": {"model": "Random Forest", "metric": "MAE", "score": "0.47 Days"},
+            "regression": {"model": "Random Forest", "metric": "MAE", "score": "0.48 Days"},
             "segmentation": {"model": "K-Means", "metric": "Risk Tiers", "score": "4"},
         },
         "pipeline": [
