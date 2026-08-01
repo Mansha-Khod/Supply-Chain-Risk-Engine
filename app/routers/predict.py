@@ -17,32 +17,54 @@ def _read_csv(file_bytes: bytes) -> pd.DataFrame:
             raise HTTPException(status_code=400, detail=f"Could not parse CSV: {exc}") from exc
     raise HTTPException(status_code=400, detail="Could not parse CSV: unsupported encoding.")
 
-def _score(data:pd.DataFrame)-> pd.DataFrame:
-     models=get_models()
-     feature_names=models.xgb_feature_names
+def _score(data: pd.DataFrame) -> pd.DataFrame:
+    models = get_models()
+    feature_names = models.xgb_feature_names
 
-     missing=[f for f in feature_names if f not in data.columns]
-     if missing:
-         raise HTTPException(
-             status_code=422,
-             detail={"message":"Missing Required Columns","missing_columns":missing},
-         )
-     X=data[feature_names]
-     predictions=models.xgb_model.predict(X)
-     probabilities=models.xgb_model.predict_proba(X)[:,1]
+    missing = [f for f in feature_names if f not in data.columns]
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Missing Required Columns", "missing_columns": missing},
+        )
+    X = data[feature_names]
+    predictions = models.xgb_model.predict(X)
+    probabilities = models.xgb_model.predict_proba(X)[:, 1]
 
-     result=data.copy()
-     result['Delay Risk']=predictions
-     result['Risk Probability']=(probabilities.astype(float) * 100).round(1)
-     result['Risk Label']=result['Risk Probability'].apply(
-         lambda x:"High Risk" if x>70 else ("Medium Risk" if x>40 else "Low Risk")
+    result = data.copy()
+    result['Delay Risk'] = predictions
+    result['Risk Probability'] = (probabilities.astype(float) * 100).round(1)
+    result['Risk Label'] = result['Risk Probability'].apply(
+        lambda x: "High Risk" if x > 70 else ("Medium Risk" if x > 40 else "Low Risk")
+    )
 
-     )
-     ordered_cols=['Risk Label',"Risk Probability"]+[
-         c for c in result.columns if c not in ("Delay Risk","Risk Probability","Risk Label")
+    # Stage 2 — estimated delay severity (only meaningful for at-risk shipments)
+    rf_missing = [f for f in models.rf_feature_names if f not in data.columns]
+    if not rf_missing:
+        severity = models.rf_model.predict(data[models.rf_feature_names])
+        result['Estimated Delay (Days)'] = pd.Series(severity, index=result.index).round(2)
+        result.loc[result['Risk Label'] == 'Low Risk', 'Estimated Delay (Days)'] = None
+    else:
+        result['Estimated Delay (Days)'] = None
 
-     ]
-     return result[ordered_cols]
+    # Stage 3 — customer risk tier, looked up from the precomputed
+    # clustering output rather than recomputed live per request.
+    if models.customer_segments is not None and 'Order Customer Id' in data.columns:
+        result = result.merge(models.customer_segments, on='Order Customer Id', how='left')
+        result = result.rename(columns={'Risk Tier': 'Customer Risk Tier'})
+    else:
+        result['Customer Risk Tier'] = None
+
+    lead_cols = ['Risk Label', 'Risk Probability', 'Estimated Delay (Days)', 'Customer Risk Tier']
+    ordered_cols = lead_cols + [
+        c for c in result.columns
+        if c not in ("Delay Risk", "Risk Probability", "Risk Label",
+                     "Estimated Delay (Days)", "Customer Risk Tier")
+    ]
+    final = result[ordered_cols]
+    final = final.astype(object).where(pd.notnull(final), None)
+    return final
+    
 
 @router.get("/features")
 def get_required_features():
